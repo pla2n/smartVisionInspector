@@ -15,7 +15,8 @@ BAUD_RATE = 9600
 IMAGE_DIR = "captured_imgs"
 os.makedirs(IMAGE_DIR, exist_ok=True)
 
-API_URL = "http://localhost:8000/api/settings"
+API_URL = "http://192.168.219.103:8000/api/settings"
+SERVER_URL = "http://192.168.219.103:8000/predict"
 CONFIDENCE_THRESHOLD = 0.3
 IS_RUNNING = True
 latest_frame = None
@@ -23,7 +24,6 @@ latest_frame = None
 print("YOLO모델 로딩중...")
 model = YOLO('yolov8n.pt')
 
-# --- 1. 설정 동기화 ---
 def sync_settings():
     global CONFIDENCE_THRESHOLD, IS_RUNNING
     try:
@@ -34,7 +34,6 @@ def sync_settings():
         pass
     threading.Timer(2.0, sync_settings).start()
 
-# --- 2. 대시보드 영상 스트리밍 (Flask) ---
 app = Flask(__name__)
 
 def generate_frames():
@@ -53,7 +52,6 @@ def video_feed():
 def run_streaming_server():
     app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
 
-# --- 3. [스레드 1] 웹캠 전담 루프 ---
 def camera_streaming_loop():
     global latest_frame
     cap = cv2.VideoCapture(0)
@@ -63,14 +61,12 @@ def camera_streaming_loop():
         ret, frame = cap.read()
         if ret:
             latest_frame = frame.copy()
-        time.sleep(0.03) # CPU 점유율 최적화 (약 30fps)
+        time.sleep(0.03)
 
-# --- 4. [메인] AI 추론 및 아두이노 제어 ---
 def ai_inference_loop():
     global latest_frame
     print(f"엣지 디바이스({ARDUINO_PORT}) 연결 시도 중...")
     
-    # DB 연결 (스레드 충돌 방지 옵션 추가)
     conn = sqlite3.connect('factory_log.db', check_same_thread=False)
     
     try:
@@ -79,14 +75,13 @@ def ai_inference_loop():
         print("엣지 통신 완료. 스마트 팩토리 관제 시작!")
         
         while True:
-            if not IS_RUNNING: # 대시보드에서 시스템 정지 시
+            if not IS_RUNNING:
                 time.sleep(0.1)
                 continue
                 
             if ser.in_waiting > 0:
                 raw_data = ser.readline().decode('utf-8').strip()
                 
-                # 아두이노에서 물체 감지 신호가 왔을 때
                 if raw_data == "DETECTED" and latest_frame is not None:
                     now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                     print(f"[알림] {now} | 물체 감지! 최신 프레임 1장만 낚아채서 분석 시작")
@@ -96,6 +91,8 @@ def ai_inference_loop():
                     
                     is_defective = False
                     detected_items = []
+                    defect_class = "Unknown"
+                    defect_conf = 0.0
                     
                     for r in current_results:
                         for box in r.boxes:
@@ -103,19 +100,25 @@ def ai_inference_loop():
                             confidence = float(box.conf[0])
                             detected_items.append(class_name)
                             
-                            # 대시보드에서 설정한 임계값(CONFIDENCE_THRESHOLD) 적용
                             if class_name in ['pizza', 'toilet', 'chair', 'person', 'bed'] and confidence > CONFIDENCE_THRESHOLD:
                                 is_defective = True
+                                defect_class = class_name
+                                defect_conf = float(confidence)
                                 
                     print(f"탐지 결과: {detected_items}")
                     
                     img_filename = "-"
                     if is_defective:
-                        print("불량 발견! 컨베이어 일시 정지 후 불량품 제거 시도")
+                        print(f"불량 발견({defect_class})! 컨베이어 일시 정지 후 불량품 제거 시도")
                         ser.write(b"RED\n")
                         current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
                         img_filename = f"error_{current_time}.jpg"
-                        cv2.imwrite(os.path.join(IMAGE_DIR, img_filename), frame_to_analyze)
+                        img_filepath = os.path.join(IMAGE_DIR, img_filename)
+                        
+                        cv2.imwrite(img_filepath, frame_to_analyze)
+
+                        threading.Thread(target=send_defect_to_server, args=(defect_class, defect_conf, img_filepath), daemon=True).start()
+                        
                         status = "RED_DETECTED"
                     else:
                         print("정상 제품. 통과")
@@ -136,13 +139,30 @@ def ai_inference_loop():
     finally:
         if conn: conn.close()
 
+def send_defect_to_server(defect_type, confidence, image_path):
+    print(f"{defect_type} 불량 감지! 서버 전송 시작")
+
+    try:
+        payload = {
+            "defect_type": defect_type,
+            "confidence": confidence
+        }
+
+        with open(image_path, "rb") as f:
+            files = {"file": f}
+
+            response = requests.post(SERVER_URL, data=payload, files=files)
+
+        if response.status_code == 200:
+            print("서버 전송 성공! 서버 응답:", response.json())
+        else:
+            print(f"전송 실패 {response.status_code}")
+    except requests.exceptions.ConnectionError:
+        print("에러 : 서버 연결 불가.")
+
 if __name__ == "__main__":
-    # 1. 설정 동기화 백그라운드 시작
     sync_settings()
-    # 2. Flask 영상 스트리밍 스레드 시작
     threading.Thread(target=run_streaming_server, daemon=True).start()
-    # 3. 카메라 전용 스레드 시작
     threading.Thread(target=camera_streaming_loop, daemon=True).start()
     
-    # 4. 메인 스레드에서는 AI 및 하드웨어 로직 실행
     ai_inference_loop()

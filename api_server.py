@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, File, UploadFile, Form
 from pydantic import BaseModel
 import sqlite3
 import pandas as pd
@@ -76,3 +76,26 @@ def update_settings(settings: SettingUpdate):
     conn.commit()
     conn.close()
     return {"message": "설정이 성공적으로 업데이트 되었습니다."}
+
+@app.post("/predict")
+async def receive_defect(
+    defect_type: str = Form(...),
+    confidence: float = Form(...),
+    file: UploadFile = File(...)
+):
+    """Edge 디바이스(Server.py)로부터 불량 감지 이미지와 정보를 수신하는 API"""
+    try:
+        file_location = f"received_{file.filename}"
+        with open(file_location, "wb") as f:
+            f.write(await file.read())
+            
+        print(f"[{defect_type}] 수신 완료! (정확도: {confidence:.2f}, 파일명: {file_location})")
+                
+        return {
+            "status": "success",
+            "message": "서버 수신 완료",
+            "saved_file": file_location,
+            "defect_type": defect_type
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

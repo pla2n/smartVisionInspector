@@ -5,7 +5,7 @@ import requests
 from openai import OpenAI
 from rag import RagEngine
 from agent_core import create_factory_agent
-from config import OPENAI_API_KEY, API_BASE_URL
+from config import OPENAI_API_KEY, API_BASE_URL, EDGE_DEVICE_URL
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 GPT_MODEL = "gpt-4o-mini"
@@ -138,10 +138,12 @@ def run_dashboard():
         with col_cctv:
             st.markdown("Edge Vision 실시간 스트리밍")
 
-            try:
-                st.image("http://localhost:5000/video_feed", use_container_width=True)
-            except:
-                st.error("영상 수신 오류 발생!")
+            stream_html = f'''
+            <div style="border: 2px solid #3e4253; border-radius: 10px; overflow: hidden; display: flex; justify-content: center; background-color: #000;">
+                <img src="{EDGE_DEVICE_URL}/video_feed" width="100%" alt="Edge Camera Offline">
+            </div>
+            '''
+            st.markdown(stream_html, unsafe_allow_html=True)
         with col_control:
             st.markdown("시스템 파라미터 제어")
 
