@@ -7,7 +7,6 @@ from datetime import datetime
 from ultralytics import YOLO
 import requests
 import threading
-from flask import Flask, Response
 
 ARDUINO_PORT = '/dev/cu.usbmodem1101'
 BAUD_RATE = 9600
@@ -15,8 +14,8 @@ BAUD_RATE = 9600
 IMAGE_DIR = "captured_imgs"
 os.makedirs(IMAGE_DIR, exist_ok=True)
 
-API_URL = "http://192.168.219.103:8000/api/settings"
-SERVER_URL = "http://192.168.219.103:8000/predict"
+API_URL = "http://YOUR_SERVER_IP:8000/api/settings"
+SERVER_URL = "http://YOUR_SERVER_IP:8000/predict"
 CONFIDENCE_THRESHOLD = 0.3
 IS_RUNNING = True
 latest_frame = None
@@ -34,34 +33,26 @@ def sync_settings():
         pass
     threading.Timer(2.0, sync_settings).start()
 
-app = Flask(__name__)
-
-def generate_frames():
-    global latest_frame
-    while True:
-        if latest_frame is None:
-            time.sleep(0.01)
-            continue
-        ret, buffer = cv2.imencode('.jpg', latest_frame)
-        yield (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
-
-@app.route('/video_feed')
-def video_feed():
-    return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
-
-def run_streaming_server():
-    app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
-
 def camera_streaming_loop():
     global latest_frame
     cap = cv2.VideoCapture(0)
-    print("카메라 구동 시작 (스레드 분리 완료)")
+    print("카메라 구동 시작 (Edge-Push 스트리밍 스레드)")
+    
+    upload_url = "http://192.168.219.103:8000/api/upload_frame"
     
     while True:
         ret, frame = cap.read()
         if ret:
             latest_frame = frame.copy()
-        time.sleep(0.03)
+            
+            ret_encode, buffer = cv2.imencode('.jpg', latest_frame)
+            if ret_encode:
+                try:
+                    requests.post(upload_url, data=buffer.tobytes(), headers={'Content-Type': 'image/jpeg'}, timeout=0.5)
+                except requests.exceptions.RequestException:
+                    pass
+                    
+        time.sleep(0.06)
 
 def ai_inference_loop():
     global latest_frame
@@ -162,7 +153,6 @@ def send_defect_to_server(defect_type, confidence, image_path):
 
 if __name__ == "__main__":
     sync_settings()
-    threading.Thread(target=run_streaming_server, daemon=True).start()
     threading.Thread(target=camera_streaming_loop, daemon=True).start()
     
     ai_inference_loop()

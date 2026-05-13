@@ -1,9 +1,13 @@
-from fastapi import FastAPI, HTTPException, File, UploadFile, Form
+from fastapi import FastAPI, HTTPException, File, UploadFile, Form, Request
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 import sqlite3
 import pandas as pd
+import asyncio
 
 app = FastAPI(title="Smart Factory API")
+
+global_frame = None
 
 def get_db_connection():
     try:
@@ -99,3 +103,23 @@ async def receive_defect(
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/upload_frame")
+async def upload_frame(request: Request):
+    """Edge 디바이스에서 전송하는 실시간 JPEG 프레임 바이트 수신"""
+    global global_frame
+    global_frame = await request.body()
+    return {"status": "ok"}
+
+async def frame_generator():
+    global global_frame
+    while True:
+        if global_frame is not None:
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + global_frame + b'\r\n')
+        await asyncio.sleep(0.05)
+
+@app.get("/video_feed")
+async def video_feed():
+    """대시보드를 위한 MJPEG 스트리밍 송출"""
+    return StreamingResponse(frame_generator(), media_type="multipart/x-mixed-replace; boundary=frame")

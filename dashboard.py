@@ -5,7 +5,7 @@ import requests
 from openai import OpenAI
 from rag import RagEngine
 from agent_core import create_factory_agent
-from config import OPENAI_API_KEY, API_BASE_URL, EDGE_DEVICE_URL
+from config import OPENAI_API_KEY, API_BASE_URL
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 GPT_MODEL = "gpt-4o-mini"
@@ -140,7 +140,7 @@ def run_dashboard():
 
             stream_html = f'''
             <div style="border: 2px solid #3e4253; border-radius: 10px; overflow: hidden; display: flex; justify-content: center; background-color: #000;">
-                <img src="{EDGE_DEVICE_URL}/video_feed" width="100%" alt="Edge Camera Offline">
+                <img src="{API_BASE_URL.replace('/api', '')}/video_feed" width="100%" alt="Edge Camera Offline">
             </div>
             '''
             st.markdown(stream_html, unsafe_allow_html=True)
