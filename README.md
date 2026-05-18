@@ -26,14 +26,22 @@
 해당 프로젝트를 수행하기 위해선 아두이노와 웹캠, 컨베이어 벨트, 서보 모터, 모터, 초음파 센서가 필요합니다.
 아두이노와 연결된 모터가 컨베이어 벨트를 직동시키고, 컨베이어 벨트 위에 설치된 초음파 센서가 물품을 감지하면 웹캠이 불량품 여부를 판단하고, 불량품일 경우 서보 모터가 작동되어 불량품을 컨베이어 벨트에서 제거합니다.
 
-<img width="933" height="835" alt="image" src="https://github.com/user-attachments/assets/2f8b7f33-0cda-457f-9c43-ffd2c7faf374" /> </img>
-제어 대시보드
-<img width="943" height="1301" alt="image" src="https://github.com/user-attachments/assets/bae4c0e3-597c-4f47-a4ec-01c5d1a4418e" /> </img>
-살제 스마트 팩토리 데이터 시각화
-<img width="708" height="754" alt="image" src="https://github.com/user-attachments/assets/c49acbeb-0e77-47b8-93b2-dee3b3b2f0cf" />  </img>
-저장된 데이터 기반 보고서 생성
-<img width="678" height="583" alt="image" src="https://github.com/user-attachments/assets/c97bc69f-1c26-4807-9d51-eafd9a4e6166" />  </img>
-간단한 챗봇
+<div align="center">
+  <img width="800" alt="제어 대시보드" src="https://github.com/user-attachments/assets/2f8b7f33-0cda-457f-9c43-ffd2c7faf374" />
+  <p><b>제어 대시보드</b></p>
+  <br>
+
+  <img width="800" alt="실제 스마트 팩토리 데이터 시각화" src="https://github.com/user-attachments/assets/bae4c0e3-597c-4f47-a4ec-01c5d1a4418e" />
+  <p><b>실제 스마트 팩토리 데이터 시각화</b></p>
+  <br>
+
+  <img width="800" alt="저장된 데이터 기반 보고서 생성" src="https://github.com/user-attachments/assets/c49acbeb-0e77-47b8-93b2-dee3b3b2f0cf" />
+  <p><b>저장된 데이터 기반 보고서 생성</b></p>
+  <br>
+
+  <img width="800" alt="간단한 챗봇" src="https://github.com/user-attachments/assets/c97bc69f-1c26-4807-9d51-eafd9a4e6166" />
+  <p><b>간단한 챗봇</b></p>
+</div>
 
 
 

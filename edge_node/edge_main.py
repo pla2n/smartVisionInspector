@@ -125,7 +125,14 @@ def ai_inference_loop():
                         "sensor_data": f"YOLO: {str(detected_items)}",
                         "img_filename": img_filename
                     }
-                    threading.Thread(target=requests.post, args=(LOGS_URL,), kwargs={"json": log_payload}, daemon=True).start()
+                    
+                    def send_log_async(payload):
+                        try:
+                            requests.post(LOGS_URL, json=payload, timeout=1.0)
+                        except Exception:
+                            pass
+                            
+                    threading.Thread(target=send_log_async, args=(log_payload,), daemon=True).start()
                         
             time.sleep(0.01)
 
