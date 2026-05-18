@@ -13,9 +13,14 @@ BAUD_RATE = 9600
 IMAGE_DIR = "captured_imgs"
 os.makedirs(IMAGE_DIR, exist_ok=True)
 
-API_URL = "http://YOUR_SERVER_IP:8000/api/settings"
-SERVER_URL = "http://YOUR_SERVER_IP:8000/predict"
-LOGS_URL = "http://YOUR_SERVER_IP:8000/api/logs"
+from dotenv import load_dotenv
+
+load_dotenv()
+SERVER_IP = os.getenv("SERVER_IP", "YOUR_SERVER_IP")
+
+API_URL = f"http://{SERVER_IP}:8000/api/settings"
+SERVER_URL = f"http://{SERVER_IP}:8000/predict"
+LOGS_URL = f"http://{SERVER_IP}:8000/api/logs"
 CONFIDENCE_THRESHOLD = 0.3
 IS_RUNNING = True
 latest_frame = None
@@ -38,7 +43,7 @@ def camera_streaming_loop():
     cap = cv2.VideoCapture(0)
     print("카메라 구동 시작 (Edge-Push 스트리밍 스레드)")
     
-    upload_url = "http://YOUR_SERVER_IP:8000/api/upload_frame"
+    upload_url = f"http://{SERVER_IP}:8000/api/upload_frame"
     
     while True:
         ret, frame = cap.read()
