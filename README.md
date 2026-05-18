@@ -28,7 +28,7 @@
 ## ✨ 주요 기능
 
 ### 🏭 엣지 컴퓨팅 기반 실시간 불량 탐지
-- 아두이노 센서와 카메라 연동을 통한 **이벤트 드리븐 객체 탐지** (센서 감지 시에만 YOLO 추론하여 부하 최소화)
+- 아두이노 센서와 카메라 연동을 통한 **이벤트 드리븐 객체 탐지** (센서 감지 시에만 YOLO 추론하여 부하 최소화, 오류 이미지 별도 저장)
 - YOLOv8 모델을 활용한 제품 불량(스크래치, 형태 불량 등) 실시간 판독
 - 컨베이어 벨트 모터 제어 및 경고등(PASS/RED) 자동 작동
 
@@ -125,6 +125,10 @@ uvicorn api_server:app --host 0.0.0.0 --port 8000
 
 # 1-2. 대시보드 실행 (새 터미널)
 streamlit run dashboard.py
+
+# 1-3. .env 파일 작성
+control_server 폴더 안에 .env 파일을 만들고,
+OPENAI_API_KEY= """ 실제 OPENAI API KEY를 입력하기! """
 ```
 
 ### 2. 현장 엣지 디바이스 실행 (Edge Node)
@@ -132,6 +136,10 @@ streamlit run dashboard.py
 ```bash
 cd edge_node
 python edge_main.py
+
+edge_node 폴더 안에 .env 파일을 만들고,
+SERVER_IP= 127.0.0.1
+를 입력해주세요! 만약 외부 환경의 서버와 통신을 한다면, 해당 망의 8000번 포트의 포트포워딩 설정을 마치고, SERVER_IP에 관제 서버 공인 IP 주소를 입력 해 주세요!
 ```
 
 ---
