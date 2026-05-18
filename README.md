@@ -23,6 +23,16 @@
 
 기존 단방향 모니터링 시스템과 상시 구동되는 Vision AI의 컴퓨팅 부하 한계를 극복하기 위해, **이벤트 드리븐 기반의 센서 퓨전 기술**을 엣지 디바이스에 적용했습니다. 더불어 대형 언어 모델(LLM) 기반의 Multi-Tool(RAG) 에이전트를 도입하여, 관리자의 자연어 질의만으로 공정 통계 조회와 불량 원인 분석을 동시 수행합니다.
 
+해당 프로젝트를 수행하기 위해선 아두이노와 웹캠, 컨베이어 벨트, 서보 모터, 모터, 초음파 센서가 필요합니다.
+아두이노와 연결된 모터가 컨베이어 벨트를 직동시키고, 컨베이어 벨트 위에 설치된 초음파 센서가 물품을 감지하면 웹캠이 불량품 여부를 판단하고, 불량품일 경우 서보 모터가 작동되어 불량품을 컨베이어 벨트에서 제거합니다.
+
+<img width="933" height="835" alt="image" src="https://github.com/user-attachments/assets/2f8b7f33-0cda-457f-9c43-ffd2c7faf374" /> 제어 대시보드 </img>
+<img width="943" height="1301" alt="image" src="https://github.com/user-attachments/assets/bae4c0e3-597c-4f47-a4ec-01c5d1a4418e" /> 살제 스마트 팩토리 데이터 시각화 </img>
+<img width="708" height="754" alt="image" src="https://github.com/user-attachments/assets/c49acbeb-0e77-47b8-93b2-dee3b3b2f0cf" /> 저장된 데이터 기반 보고서 생성 </img>
+<img width="678" height="583" alt="image" src="https://github.com/user-attachments/assets/c97bc69f-1c26-4807-9d51-eafd9a4e6166" /> 간단한 챗봇 </img>
+
+
+
 ---
 
 ## ✨ 주요 기능
