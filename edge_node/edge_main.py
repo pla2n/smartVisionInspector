@@ -1,5 +1,4 @@
 import serial
-import sqlite3
 import time
 import cv2
 import os
@@ -16,6 +15,7 @@ os.makedirs(IMAGE_DIR, exist_ok=True)
 
 API_URL = "http://YOUR_SERVER_IP:8000/api/settings"
 SERVER_URL = "http://YOUR_SERVER_IP:8000/predict"
+LOGS_URL = "http://YOUR_SERVER_IP:8000/api/logs"
 CONFIDENCE_THRESHOLD = 0.3
 IS_RUNNING = True
 latest_frame = None
@@ -38,7 +38,7 @@ def camera_streaming_loop():
     cap = cv2.VideoCapture(0)
     print("카메라 구동 시작 (Edge-Push 스트리밍 스레드)")
     
-    upload_url = "http://192.168.219.103:8000/api/upload_frame"
+    upload_url = "http://YOUR_SERVER_IP:8000/api/upload_frame"
     
     while True:
         ret, frame = cap.read()
@@ -57,8 +57,6 @@ def camera_streaming_loop():
 def ai_inference_loop():
     global latest_frame
     print(f"엣지 디바이스({ARDUINO_PORT}) 연결 시도 중...")
-    
-    conn = sqlite3.connect('factory_log.db', check_same_thread=False)
     
     try:
         ser = serial.Serial(ARDUINO_PORT, BAUD_RATE, timeout=1)
@@ -116,10 +114,13 @@ def ai_inference_loop():
                         ser.write(b"PASS\n")
                         status = "PASS"
                         
-                    cursor = conn.cursor()
-                    cursor.execute("INSERT INTO logs (timestamp, status, sensor_data, img_filename) VALUES (?, ?, ?, ?)",
-                                (now, status, f"YOLO: {str(detected_items)}", img_filename))
-                    conn.commit()
+                    log_payload = {
+                        "timestamp": now,
+                        "status": status,
+                        "sensor_data": f"YOLO: {str(detected_items)}",
+                        "img_filename": img_filename
+                    }
+                    threading.Thread(target=requests.post, args=(LOGS_URL,), kwargs={"json": log_payload}, daemon=True).start()
                         
             time.sleep(0.01)
 
@@ -127,8 +128,6 @@ def ai_inference_loop():
         print(f"장애 발생! {ARDUINO_PORT} 포트를 찾을 수 없습니다.")
     except KeyboardInterrupt:
         print("서버를 안전하게 종료합니다.")
-    finally:
-        if conn: conn.close()
 
 def send_defect_to_server(defect_type, confidence, image_path):
     print(f"{defect_type} 불량 감지! 서버 전송 시작")

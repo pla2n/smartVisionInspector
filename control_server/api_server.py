@@ -9,6 +9,12 @@ app = FastAPI(title="Smart Factory API")
 
 global_frame = None
 
+class LogEntry(BaseModel):
+    timestamp: str
+    status: str
+    sensor_data: str
+    img_filename: str
+
 def get_db_connection():
     try:
         conn = sqlite3.connect('factory_log.db', check_same_thread=False)
@@ -106,7 +112,6 @@ async def receive_defect(
 
 @app.post("/api/upload_frame")
 async def upload_frame(request: Request):
-    """Edge 디바이스에서 전송하는 실시간 JPEG 프레임 바이트 수신"""
     global global_frame
     global_frame = await request.body()
     return {"status": "ok"}
@@ -121,5 +126,18 @@ async def frame_generator():
 
 @app.get("/video_feed")
 async def video_feed():
-    """대시보드를 위한 MJPEG 스트리밍 송출"""
     return StreamingResponse(frame_generator(), media_type="multipart/x-mixed-replace; boundary=frame")
+
+@app.post("/api/logs")
+def add_log(entry: LogEntry):
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO logs (timestamp, status, sensor_data, img_filename) VALUES (?, ?, ?, ?)",
+                       (entry.timestamp, entry.status, entry.sensor_data, entry.img_filename))
+        conn.commit()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        conn.close()
+    return {"status": "ok"}
