@@ -19,9 +19,9 @@
 ---
 
 ## 📖 프로젝트 개요
-**Smart Vision Inspector**는 제조 현장(Smart Factory)의 객체 탐지 및 하드웨어 제어를 자동화하고, 이를 원격에서 통제 및 분석할 수 있는 양방향 지능형 관제 시스템입니다. 
+**Smart Vision Inspector**는 제조 현장의 객체 탐지 및 하드웨어 제어를 자동화하고, 이를 원격에서 통제 및 분석할 수 있는 양방향 지능형 관제 시스템입니다. 
 
-기존 단방향 모니터링 시스템과 상시 구동되는 Vision AI의 컴퓨팅 부하 한계를 극복하기 위해, **이벤트 드리븐(Event-Driven) 기반의 센서 퓨전 기술**을 엣지 디바이스에 적용했습니다. 더불어 대형 언어 모델(LLM) 기반의 Multi-Tool 에이전트를 도입하여, 관리자의 자연어 질의만으로 공정 통계 조회와 불량 원인 분석을 동시 수행합니다.
+기존 단방향 모니터링 시스템과 상시 구동되는 Vision AI의 컴퓨팅 부하 한계를 극복하기 위해, **이벤트 드리븐 기반의 센서 퓨전 기술**을 엣지 디바이스에 적용했습니다. 더불어 대형 언어 모델(LLM) 기반의 Multi-Tool(RAG) 에이전트를 도입하여, 관리자의 자연어 질의만으로 공정 통계 조회와 불량 원인 분석을 동시 수행합니다.
 
 ---
 
@@ -34,14 +34,14 @@
 
 ### 🌐 분산 아키텍처(MSA) 및 실시간 관제
 - 공장 현장(Edge)과 관제 센터(Server)의 물리적 망 분리 완벽 지원
-- 엣지 디바이스에서 서버로 영상을 밀어 올리는(Edge-Push) 방식의 지연 없는 실시간 네트워크 스트리밍
+- 엣지 디바이스에서 서버로 영상을 밀어 올리는 방식의 지연 없는 실시간 네트워크 스트리밍
 - Streamlit 대시보드를 통한 실시간 생산 통계 및 불량률 모니터링
-- 대시보드에서 엣지 디바이스의 AI 민감도(Confidence) 및 시스템 가동 상태 원격 제어(OT-IT 연동)
+- 대시보드에서 엣지 디바이스의 AI 민감도 및 시스템 가동 상태 원격 제어
 
 ### 🤖 멀티모달 RAG AI 에이전트
-- LangGraph 기반의 반응형(ReAct) AI 에이전트 아키텍처 통합
+- LangGraph 기반의 반응형 AI 에이전트 아키텍처 통합
 - 자연어로 공정 통계 조회, 불량 내역 질문 시 데이터베이스와 연동된 답변 생성
-- 불량 이미지를 인식하여 사용자에게 시각적/맥락적 원인 분석 제공 (Multi-Modal)
+- 불량 이미지를 인식하여 사용자에게 시각적/맥락적 원인 분석 제공
 
 ---
 
@@ -49,12 +49,12 @@
 
 <div align="center">
   <img src="https://img.shields.io/badge/Edge_Node-(Factory)-orange?style=for-the-badge" /> 
-  ➡️ HTTP POST API (Streaming & Logs) ➡️ 
+     ➡️ HTTP POST API (Streaming & Logs) ➡️   
   <img src="https://img.shields.io/badge/Control_Server-(Cloud/Local)-blue?style=for-the-badge" />
 </div>
 
-- **Edge Node (현장 장비):** 카메라, 아두이노 제어 및 YOLOv8 엣지 추론을 수행하며 관제 서버로 데이터를 쏘아 올림 (`edge_node/`)
-- **Control Server (관제 서버):** FastAPI 백엔드, SQLite 통합 DB, AI 에이전트, Streamlit 프론트엔드 대시보드를 통해 현장을 관제 (`control_server/`)
+- **Edge Node (현장 장비):** 카메라, 아두이노 제어 및 YOLOv8 엣지 추론을 수행하며 관제 서버로 데이터를 쏘아 올림
+- **Control Server (관제 서버):** FastAPI 백엔드, SQLite 통합 DB, AI 에이전트, Streamlit 프론트엔드 대시보드를 통해 현장을 관제
 
 ---
 
@@ -115,7 +115,7 @@ smartVisionInspector/
 
 > **네트워크 환경 설정:** 환경에 맞춰 `edge_node/edge_main.py` 내부의 서버 통신 URL(`API_URL`, `SERVER_URL`, `LOGS_URL`)과 `control_server/dashboard.py` 내부의 이미지 소스 IP를 관제 서버의 IP로 수정해야 합니다.
 
-### 1. 관제 서버 실행 (Control Server)
+### 1. 관제 서버 실행 (Server)
 메인 서버(공유기망 등)에서 다음 명령어를 실행합니다.
 ```bash
 cd control_server
@@ -137,4 +137,4 @@ python edge_main.py
 ---
 
 ## 👨‍💻 제작자
-**■ Lead Architect:** 이세용 (영남대학교 정보통신공학전공)
+이세용
