@@ -2,14 +2,6 @@
 
 > **지능형 엣지 관제 및 멀티모달 AI 에이전트 시스템 (IT-OT 융합 아키텍처)**
 
-<div align="center">
-  <!-- 배지들 -->
-  [![Python](https://img.shields.io/badge/python-3.9+-blue.svg)](https://python.org)
-  [![FastAPI](https://img.shields.io/badge/FastAPI-0.68+-green.svg)](https://fastapi.tiangolo.com)
-  [![Streamlit](https://img.shields.io/badge/Streamlit-1.0+-red.svg)](https://streamlit.io)
-  [![YOLOv8](https://img.shields.io/badge/YOLOv8-Ultralytics-yellow.svg)](https://ultralytics.com)
-  
-  **📖 [프로젝트 기술 보고서 및 위키 준비 중](#)**
 </div>
 
 ---
