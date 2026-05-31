@@ -17,6 +17,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 SERVER_IP = os.getenv("SERVER_IP", "YOUR_SERVER_IP")
+API_SECRET_KEY = os.getenv("API_SECRET_KEY", "")
+AUTH_HEADER = {"X-API-Key": API_SECRET_KEY}
 
 API_URL = f"http://{SERVER_IP}:8000/api/settings"
 SERVER_URL = f"http://{SERVER_IP}:8000/predict"
@@ -31,7 +33,7 @@ model = YOLO('yolov8n.pt')
 def sync_settings():
     global CONFIDENCE_THRESHOLD, IS_RUNNING
     try:
-        resp = requests.get(API_URL).json()
+        resp = requests.get(API_URL, headers=AUTH_HEADER).json()
         CONFIDENCE_THRESHOLD = resp['confidence']
         IS_RUNNING = bool(resp['is_running'])
     except Exception:
@@ -45,17 +47,21 @@ def camera_streaming_loop():
     
     upload_url = f"http://{SERVER_IP}:8000/api/upload_frame"
     
-    while True:
-        ret, frame = cap.read()
-        if ret:
-            latest_frame = frame.copy()
-            
-            ret_encode, buffer = cv2.imencode('.jpg', latest_frame)
-            if ret_encode:
-                try:
-                    requests.post(upload_url, data=buffer.tobytes(), headers={'Content-Type': 'image/jpeg'}, timeout=0.5)
-                except requests.exceptions.RequestException:
-                    pass
+    try:
+        while True:
+            ret, frame = cap.read()
+            if ret:
+                latest_frame = frame.copy()
+                
+                ret_encode, buffer = cv2.imencode('.jpg', latest_frame)
+                if ret_encode:
+                    try:
+                        requests.post(upload_url, data=buffer.tobytes(), headers={**AUTH_HEADER, 'Content-Type': 'image/jpeg'}, timeout=0.5)
+                    except requests.exceptions.RequestException:
+                        pass
+    finally:
+        cap.release()
+        print("카메라 스트리밍 종료")
                     
         time.sleep(0.06)
 
@@ -128,7 +134,7 @@ def ai_inference_loop():
                     
                     def send_log_async(payload):
                         try:
-                            requests.post(LOGS_URL, json=payload, timeout=1.0)
+                            requests.post(LOGS_URL, json=payload, headers=AUTH_HEADER,timeout=1.0)
                         except Exception:
                             pass
                             
@@ -153,7 +159,7 @@ def send_defect_to_server(defect_type, confidence, image_path):
         with open(image_path, "rb") as f:
             files = {"file": f}
 
-            response = requests.post(SERVER_URL, data=payload, files=files)
+            response = requests.post(SERVER_URL, data=payload, files=files, headers=AUTH_HEADER)
 
         if response.status_code == 200:
             print("서버 전송 성공! 서버 응답:", response.json())

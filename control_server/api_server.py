@@ -1,11 +1,29 @@
-from fastapi import FastAPI, HTTPException, File, UploadFile, Form, Request
+from fastapi import FastAPI, HTTPException, File, UploadFile, Form, Request, Depends
 from fastapi.responses import StreamingResponse
+from fastapi.security import APIKeyHeader
 from pydantic import BaseModel
 import sqlite3
 import pandas as pd
 import asyncio
+import os
+import uuid
+from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = FastAPI(title="Smart Factory API")
+
+API_KEY = os.getenv("API_SECRET_KEY", "change-me")
+api_key_header = APIKeyHeader(name='X-API-Key', auto_error=False)
+
+async def verify_api_key(key: str = Depends(api_key_header)):
+    if key != API_KEY:
+        raise HTTPException(status_code=403, detail="인가되지 않은 접근입니다.")
+
+UPLOAD_DIR = Path("received_imgs")
+UPLOAD_DIR.mkdir(exist_ok=True)
+ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png"}
 
 global_frame = None
 
@@ -22,7 +40,7 @@ def get_db_connection():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"DB Connection Error: {e}")
     
-@app.get("/api/stats")
+@app.get("/api/stats", dependencies=[Depends(verify_api_key)])
 def get_factory_stats():
     """대시보드 상단 지표를 위한 API"""
     conn = get_db_connection()
@@ -42,13 +60,14 @@ def get_factory_stats():
     finally:
         conn.close()
 
-@app.get("/api/logs")
+@app.get("/api/logs", dependencies=[Depends(verify_api_key)])
 def get_factory_logs(limit: int = 500):
+    limit = max(1, min(limit, 1000))
     """실시간 공정 로그 데이터 API"""
     conn = get_db_connection()
     try:
-        query = f"SELECT timestamp, status, sensor_data FROM logs ORDER BY timestamp ASC LIMIT {limit}"
-        df = pd.read_sql_query(query, conn)
+        query = f"SELECT timestamp, status, sensor_data FROM logs ORDER BY timestamp ASC LIMIT ?"
+        df = pd.read_sql_query(query, conn, params=(limit,))
         return df.to_dict(orient="records")
     finally:
         conn.close()
@@ -68,7 +87,7 @@ def init_settings():
 
 init_settings()
 
-@app.get("/api/settings")
+@app.get("/api/settings", dependencies=[Depends(verify_api_key)])
 def get_settings():
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -77,7 +96,7 @@ def get_settings():
     conn.close()
     return {"confidence": row[0], "is_running": row[1]}
 
-@app.post("/api/settings")
+@app.post("/api/settings", dependencies=[Depends(verify_api_key)])
 def update_settings(settings: SettingUpdate):
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -87,7 +106,7 @@ def update_settings(settings: SettingUpdate):
     conn.close()
     return {"message": "설정이 성공적으로 업데이트 되었습니다."}
 
-@app.post("/predict")
+@app.post("/predict", dependencies=[Depends(verify_api_key)])
 async def receive_defect(
     defect_type: str = Form(...),
     confidence: float = Form(...),
@@ -95,7 +114,13 @@ async def receive_defect(
 ):
     """Edge 디바이스(Server.py)로부터 불량 감지 이미지와 정보를 수신하는 API"""
     try:
-        file_location = f"received_{file.filename}"
+        suffix = Path(file.filename).suffix.lower()
+        if suffix not in ALLOWED_EXTENSIONS:
+            raise HTTPException(status_code=400, detail="허용되지 않는 파일 형식입니다. JPG, JPEG, PNG만 가능합니다.")
+
+        safe_filename = f"received_{uuid.uuid4().hex}{suffix}"
+        file_location = UPLOAD_DIR / safe_filename
+
         with open(file_location, "wb") as f:
             f.write(await file.read())
             
@@ -110,7 +135,7 @@ async def receive_defect(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/upload_frame")
+@app.post("/api/upload_frame", dependencies=[Depends(verify_api_key)])
 async def upload_frame(request: Request):
     global global_frame
     global_frame = await request.body()
@@ -128,7 +153,7 @@ async def frame_generator():
 async def video_feed():
     return StreamingResponse(frame_generator(), media_type="multipart/x-mixed-replace; boundary=frame")
 
-@app.post("/api/logs")
+@app.post("/api/logs", dependencies=[Depends(verify_api_key)])
 def add_log(entry: LogEntry):
     conn = get_db_connection()
     try:

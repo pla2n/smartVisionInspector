@@ -1,4 +1,6 @@
 import time
+import hashlib
+import os
 import streamlit as st
 import pandas as pd
 import requests
@@ -6,6 +8,9 @@ from openai import OpenAI
 from rag import RagEngine
 from agent_core import create_factory_agent
 from config import OPENAI_API_KEY, API_BASE_URL
+
+API_SECRET_KEY = os.getenv("API_SECRET_KEY", "change-me-immediately")
+HEADERS = {"X-API-Key": API_SECRET_KEY}
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 GPT_MODEL = "gpt-4o-mini"
@@ -28,6 +33,8 @@ if 'show_chat' not in st.session_state:
     st.session_state['show_chat'] = False
 if 'chat_history' not in st.session_state:
     st.session_state['chat_history'] = [{"role": "assistant", "content": "안녕하세요! 불량 탐지 AI 어시스턴트입니다. 무엇을 도와드릴까요?"}]
+if 'agent' not in st.session_state:
+    st.session_state['agent'] = create_factory_agent()
     
 
 def login():
@@ -39,7 +46,10 @@ def login():
         submit = st.form_submit_button("로그인")
 
         if submit:
-            if username == "admin" and password == "1234":
+            ADMIN_ID = os.getenv("ADMIN_ID", "admin")
+            ADMIN_PW_HASH = os.getenv("ADMIN_PW_HASH", "")
+
+            if username == ADMIN_ID and hashlib.sha256(password.encode()).hexdigest() == ADMIN_PW_HASH:
                 st.session_state['logged_in'] = True
                 st.success("인증 성공!")
                 st.rerun()
@@ -60,6 +70,8 @@ def generate_ai_report(df, stats):
     defect_items = recent_defects['sensor_data'].tolist()
 
     system_prompt = f"""
+    당신은 스마트 팩토리의 공정 데이터를 분석하는 AI 어시스턴트입니다. 아래는 최근 공정에서 발생한 불량품 데이터입니다.
+    {', '.join(defect_items)}
     """
 
     response = client.chat.completions.create(
@@ -78,8 +90,8 @@ def run_dashboard():
     st.markdown("---")
 
     try:
-        stats_response = requests.get(f"{API_BASE_URL}/stats")
-        logs_response = requests.get(f"{API_BASE_URL}/logs?limit=500")
+        stats_response = requests.get(f"{API_BASE_URL}/stats", headers=HEADERS)
+        logs_response = requests.get(f"{API_BASE_URL}/logs?limit=500", headers=HEADERS)
 
         stats_response.raise_for_status()
         logs_response.raise_for_status()
@@ -148,7 +160,7 @@ def run_dashboard():
             st.markdown("시스템 파라미터 제어")
 
             try:
-                current_settings = requests.get(f"{API_BASE_URL}/settings").json()
+                current_settings = requests.get(f"{API_BASE_URL}/settings", headers=HEADERS).json()
                 curr_conf = current_settings['confidence']
                 curr_run = bool(current_settings['is_running'])
             except:
@@ -166,7 +178,7 @@ def run_dashboard():
 
                 if submitted:
                     payload = {"confidence": new_conf, "is_running": 1 if is_running else 0}
-                    requests.post(f"{API_BASE_URL}/settings", json=payload)
+                    requests.post(f"{API_BASE_URL}/settings", json=payload, headers=HEADERS)
                     st.success("현장 엣지 노드에 설정이 전송되었습니다!")
                     time.sleep(1)
                     st.rerun()
@@ -221,8 +233,7 @@ def run_dashboard():
                 st.session_state['chat_history'].append({"role": "user", "content": prompt})
 
                 with st.spinner("ChatGPT가 답변을 생성 중..."):
-                    agent = create_factory_agent()
-                    ai_response = agent.invoke({"messages": [("user", prompt)]})
+                    ai_response = st.session_state['agent'].invoke({"messages": [("user", prompt)]})
 
                 st.session_state['chat_history'].append({"role": "assistant", "content": ai_response['messages'][-1].content})
                 st.rerun()

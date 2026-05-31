@@ -5,9 +5,9 @@ import pandas as pd
 from langchain_openai import ChatOpenAI
 from langchain.tools import tool
 from langgraph.prebuilt import create_react_agent
-from langchain_core.messages import SystemMessage
 from config import OPENAI_API_KEY
 
+DB_PATH = os.path.join(os.path.dirname(__file__), 'factory_log.db')
 os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
 LIMIT = 1000
 
@@ -17,7 +17,7 @@ def query_db_statistics(question: str) -> str:
     정확한 숫자 정보 사용
     """
     try:
-        conn = sqlite3.connect('factory_log.db')
+        conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
 
         cursor.execute("SELECT COUNT(*) FROM logs")
@@ -26,12 +26,22 @@ def query_db_statistics(question: str) -> str:
         cursor.execute("SELECT COUNT(*) FROM logs WHERE status='RED_DETECTED'")
         defect = cursor.fetchone()[0]
 
-        df = pd.read_sql_query("SELECT * FROM logs ORDER BY timestamp DESC LIMIT {LIMIT}", conn)
+        df = pd.read_sql_query(f"SELECT * FROM logs ORDER BY timestamp DESC LIMIT {LIMIT}", conn)
 
         conn.close()
 
         defect_rate = round((defect / total * 100), 1) if total > 0 else 0
-        return f"DB 조회 결과: 총 검사량 {total}개, 불량품 {defect}개, 현재 불량률 {defect_rate}% 입니다."
+
+        recent_defects = df[df['status'] == 'RED_DETECTED'].head(5)
+        defect_summary = "\n".join(
+            f" - {row['timestamp']}: {row['sensor_data']}"
+            for _, row in recent_defects.iterrows()
+        ) if not recent_defects.empty else " - 없음"
+
+        return (
+            f"DB 조회 결과: 총 검사량 {total}개, 불량품 {defect}개, 현재 불량률 {defect_rate}% 입니다."
+            f"최근 불량 내역:\n{defect_summary}"
+        )
     except Exception as e:
         return f"DB 조회 중 오류 발생: {e}"
 

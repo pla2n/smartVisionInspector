@@ -47,7 +47,7 @@ class RagEngine:
         chain = RetrievalQA.from_chain_type(
             llm=self.llm,
             chain_type="stuff",
-            retriever=self.vector_db.as_retriever(search_kwargs={"k": len(self.vector_db)}),
+            retriever=self.vector_db.as_retriever(search_kwargs={"k": 20}),
             chain_type_kwargs={"prompt": PROMPT}
         )
 
