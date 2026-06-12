@@ -2,6 +2,7 @@ import serial
 import time
 import cv2
 import os
+import collections
 from datetime import datetime
 from ultralytics import YOLO
 import requests
@@ -26,9 +27,17 @@ LOGS_URL = f"http://{SERVER_IP}:8000/api/logs"
 CONFIDENCE_THRESHOLD = 0.3
 IS_RUNNING = True
 latest_frame = None
+frame_buffer = collections.deque(maxlen=90)
 
-print("YOLO모델 로딩중...")
-model = YOLO('yolov8n.pt')
+YOLO_MODEL_PATH = os.getenv("YOLO_MODEL_PATH", "yolov8n.pt")
+defect_classes_raw = os.getenv("DEFECT_CLASSES", "pizza,toilet,chair,person,bed")
+DEFECT_CLASSES = [c.strip() for c in defect_classes_raw.split(",") if c.strip()]
+
+print(f"YOLO모델({YOLO_MODEL_PATH}) 로딩중...")
+model = YOLO(YOLO_MODEL_PATH)
+model_lock = threading.Lock()
+print(f"불량 감지 대상 클래스 목록: {DEFECT_CLASSES}")
+print(f"불량 감지 임계값: {CONFIDENCE_THRESHOLD}")
 
 def sync_settings():
     global CONFIDENCE_THRESHOLD, IS_RUNNING
@@ -44,26 +53,39 @@ def camera_streaming_loop():
     global latest_frame
     cap = cv2.VideoCapture(0)
     print("카메라 구동 시작 (Edge-Push 스트리밍 스레드)")
-    
+
     upload_url = f"http://{SERVER_IP}:8000/api/upload_frame"
-    
+
+    def upload_frame(buf):
+        try:
+            requests.post(upload_url, data=buf, headers={**AUTH_HEADER, 'Content-Type': 'image/jpeg'}, timeout=0.5)
+        except requests.exceptions.RequestException:
+            pass
+
     try:
         while True:
             ret, frame = cap.read()
             if ret:
                 latest_frame = frame.copy()
-                
-                ret_encode, buffer = cv2.imencode('.jpg', latest_frame)
-                if ret_encode:
+                frame_buffer.append((time.time(), frame.copy()))
+
+                if model_lock.acquire(blocking=False):
                     try:
-                        requests.post(upload_url, data=buffer.tobytes(), headers={**AUTH_HEADER, 'Content-Type': 'image/jpeg'}, timeout=0.5)
-                    except requests.exceptions.RequestException:
-                        pass
+                        results = model(frame, verbose=False)
+                        annotated = results[0].plot()
+                    finally:
+                        model_lock.release()
+                else:
+                    annotated = frame
+
+                ret_encode, buffer = cv2.imencode('.jpg', annotated)
+                if ret_encode:
+                    threading.Thread(target=upload_frame, args=(buffer.tobytes(),), daemon=True).start()
+
+            time.sleep(0.03)
     finally:
         cap.release()
         print("카메라 스트리밍 종료")
-                    
-        time.sleep(0.06)
 
 def ai_inference_loop():
     global latest_frame
@@ -84,28 +106,63 @@ def ai_inference_loop():
                 
                 if raw_data == "DETECTED" and latest_frame is not None:
                     now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                    print(f"[알림] {now} | 물체 감지! 최신 프레임 1장만 낚아채서 분석 시작")
-                    
-                    frame_to_analyze = latest_frame.copy()
-                    current_results = model(frame_to_analyze, verbose=False)
-                    
+                    detect_time = time.time()
+                    print(f"[알림] {now} | 물체 감지! 2초 전 6장 + 1초 전 6장 + 현재 6장 분석 시작")
+
+                    frames_2s = [
+                        f for ts, f in frame_buffer
+                        if 1.7 <= detect_time - ts <= 2.3
+                    ][-6:]
+
+                    frames_1s = [
+                        f for ts, f in frame_buffer
+                        if 0.7 <= detect_time - ts <= 1.3
+                    ][-6:]
+
+                    now_frames = []
+                    collect_start = time.time()
+                    while time.time() - collect_start < 0.3:
+                        if latest_frame is not None:
+                            now_frames.append(latest_frame.copy())
+                        time.sleep(0.05)
+                    now_frames = now_frames[:6]
+
+                    burst_frames = frames_2s + frames_1s + now_frames
+                    if not burst_frames:
+                        burst_frames = [latest_frame.copy()]
+
+                    print(f"  → 2초 전 {len(frames_2s)}장 + 1초 전 {len(frames_1s)}장 + 현재 {len(now_frames)}장 = 총 {len(burst_frames)}장 YOLO 분석 중...")
+
+
+
                     is_defective = False
                     detected_items = []
                     defect_class = "Unknown"
                     defect_conf = 0.0
-                    
-                    for r in current_results:
-                        for box in r.boxes:
-                            class_name = model.names[int(box.cls[0])]
-                            confidence = float(box.conf[0])
-                            detected_items.append(class_name)
-                            
-                            if class_name in ['pizza', 'toilet', 'chair', 'person', 'bed'] and confidence > CONFIDENCE_THRESHOLD:
-                                is_defective = True
-                                defect_class = class_name
-                                defect_conf = float(confidence)
-                                
-                    print(f"탐지 결과: {detected_items}")
+                    frame_to_analyze = burst_frames[0]
+                    all_detected_with_conf = []
+
+                    for frame in burst_frames:
+                        with model_lock:
+                            results = model(frame, verbose=False)
+
+                        for r in results:
+                            for box in r.boxes:
+                                class_name = model.names[int(box.cls[0])]
+                                confidence = float(box.conf[0])
+                                all_detected_with_conf.append((class_name, round(confidence, 2)))
+                                if class_name not in detected_items:
+                                    detected_items.append(class_name)
+
+                                if class_name in DEFECT_CLASSES and confidence > CONFIDENCE_THRESHOLD:
+                                    if confidence > defect_conf:
+                                        is_defective = True
+                                        defect_class = class_name
+                                        defect_conf = confidence
+                                        frame_to_analyze = frame
+
+                    detected_with_conf = all_detected_with_conf
+                    print(f"탐지 결과 (멀티프레임): {detected_with_conf}")
                     
                     img_filename = "-"
                     if is_defective:
