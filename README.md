@@ -69,6 +69,8 @@
 ## 📊 커스텀 모델 학습 및 성능
 
 사전 학습된 YOLOv8n을 베이스로, Roboflow에서 수집한 스마트 팩토리 불량 데이터셋으로 파인튜닝했습니다.
+Roboflow에서 425장의 이미지 데이터셋을 직접 제작했습니다.
+https://app.roboflow.com/home-ogtae/smartfactory-7hesr/3
 
 ### 학습 설정
 
