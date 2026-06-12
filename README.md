@@ -21,13 +21,17 @@
 
 **Smart Vision Inspector**는 컨베이어 벨트 위를 지나는 제품의 불량 여부를 실시간으로 판정하고, 불량품을 자동 배출하는 스마트 팩토리 시스템입니다. 공장 현장(엣지)과 관제 센터(서버)를 분리된 물리 환경으로 가정하고 설계했습니다.
 
-아두이노에 연결된 스테퍼 모터가 컨베이어 벨트를 구동하고, 초음파 센서가 제품을 감지하면 웹캠과 YOLOv8이 불량 판정을 수행합니다. 불량으로 판정되면 서보 모터가 작동해 해당 제품을 벨트 밖으로 밀어냅니다. 모든 판정 이력은 관제 서버 DB에 쌓이고, AI 에이전트를 통해 자연어로 공정 통계를 조회하거나 불량 이미지를 분석할 수 있습니다.
+아두이노에 연결된 스테퍼 모터가 컨베이어 벨트를 구동하고, 초음파 센서가 제품을 감지하면 웹캠의 YOLOv8이 불량 판정을 수행합니다. 불량으로 판정되면 서보 모터가 작동해 해당 제품을 벨트 밖으로 밀어냅니다. 모든 판정 이력은 관제 서버 DB에 쌓이고, AI 에이전트를 통해 자연어로 공정 통계를 조회하거나 불량 이미지를 분석할 수 있습니다.
 
 <div align="center">
-  <img width="800" alt="제어 대시보드" src="https://github.com/user-attachments/assets/2f8b7f33-0cda-457f-9c43-ffd2c7faf374" />
+  <img width="3000" height="4000" alt="KakaoTalk_Photo_2026-06-12-09-31-14" src="https://github.com/user-attachments/assets/e723a54d-a5cd-411c-ac5b-78578034aee1" />
   <p><b>통합 관제 대시보드</b></p>
   <br>
 
+  <img width="480" height="480" alt="merged" src="https://github.com/user-attachments/assets/312d3104-7fa7-47d5-aaa5-8412fc64f40e" />
+  <p><b>불량품 검출 및 제거 과정</b></p>
+  <br>
+  
   <img width="800" alt="실제 스마트 팩토리 데이터 시각화" src="https://github.com/user-attachments/assets/bae4c0e3-597c-4f47-a4ec-01c5d1a4418e" />
   <p><b>실제 스마트 팩토리 데이터 시각화</b></p>
   <br>
