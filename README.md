@@ -24,15 +24,20 @@
 아두이노에 연결된 스테퍼 모터가 컨베이어 벨트를 구동하고, 초음파 센서가 제품을 감지하면 웹캠의 YOLOv8이 불량 판정을 수행합니다. 불량으로 판정되면 서보 모터가 작동해 해당 제품을 벨트 밖으로 밀어냅니다. 모든 판정 이력은 관제 서버 DB에 쌓이고, AI 에이전트를 통해 자연어로 공정 통계를 조회하거나 불량 이미지를 분석할 수 있습니다.
 
 <div align="center">
-  <img width="3000" height="4000" alt="KakaoTalk_Photo_2026-06-12-09-31-14" src="https://github.com/user-attachments/assets/e723a54d-a5cd-411c-ac5b-78578034aee1" />
-  <p><b>통합 관제 대시보드</b></p>
+  
+  <img width="368" height="654" alt="KakaoTalk_Photo_2026-06-14-00-14-03 003" src="https://github.com/user-attachments/assets/e78ebaff-e4f2-435b-92f5-5d0649b98942" />
+  <p><b>정상 제품 처리 예시</b></p>
   <br>
 
-  <img width="480" height="480" alt="merged" src="https://github.com/user-attachments/assets/312d3104-7fa7-47d5-aaa5-8412fc64f40e" />
-  <p><b>불량품 검출 및 제거 과정</b></p>
+  <img width="368" height="654" alt="KakaoTalk_Photo_2026-06-14-00-14-02 001" src="https://github.com/user-attachments/assets/3f469dc8-6d29-4e43-b095-42a2a667c78d" />
+  <p><b>오염 제품(Stained) 처리 예시</b></p>
+  <br>
+
+  <img width="368" height="654" alt="KakaoTalk_Photo_2026-06-14-00-14-03 002" src="https://github.com/user-attachments/assets/a0041232-15ac-4cd2-910d-911528b074bf" />
+  <p><b>오염 제품(Stained) 처리 예시</b></p>
   <br>
   
-  <img width="800" alt="실제 스마트 팩토리 데이터 시각화" src="https://github.com/user-attachments/assets/bae4c0e3-597c-4f47-a4ec-01c5d1a4418e" />
+  <img width="867" height="1294" alt="image" src="https://github.com/user-attachments/assets/f6500777-1336-4d9d-aa4a-fbf1d59e93c9" />
   <p><b>실제 스마트 팩토리 데이터 시각화</b></p>
   <br>
 
