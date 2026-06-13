@@ -41,7 +41,10 @@
   <p><b>실제 스마트 팩토리 데이터 시각화</b></p>
   <br>
 
-  <img width="800" alt="저장된 데이터 기반 보고서 생성" src="https://github.com/user-attachments/assets/c97bc69f-1c26-4807-9d51-eafd9a4e6166" />
+  <img width="694" height="764" alt="image" src="https://github.com/user-attachments/assets/520b8d91-d4b3-4caa-8e72-8fa67d4e7bf5" />
+  <p><b>RAG 챗봇</b></p>
+  
+  <img width="587" height="755" alt="image" src="https://github.com/user-attachments/assets/d9ccc2e0-c416-4920-9514-71c6965a19ed" />
   <p><b>저장된 데이터 기반 보고서 생성</b></p>
 </div>
 
