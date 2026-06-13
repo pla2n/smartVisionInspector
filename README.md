@@ -34,7 +34,7 @@
   <br>
 
   <img width="368" height="654" alt="KakaoTalk_Photo_2026-06-14-00-14-03 002" src="https://github.com/user-attachments/assets/a0041232-15ac-4cd2-910d-911528b074bf" />
-  <p><b>오염 제품(Stained) 처리 예시</b></p>
+  <p><b>손상 제품(Broken) 처리 예시</b></p>
   <br>
   
   <img width="867" height="1294" alt="image" src="https://github.com/user-attachments/assets/f6500777-1336-4d9d-aa4a-fbf1d59e93c9" />
