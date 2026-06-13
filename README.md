@@ -66,36 +66,38 @@
 
 ---
 
-## 📊 커스텀 모델 학습 및 성능
+## 📊 커스텀 모델 파인튜닝
 
-사전 학습된 YOLOv8n을 베이스로, Roboflow에서 수집한 스마트 팩토리 불량 데이터셋으로 파인튜닝했습니다.
-Roboflow에서 425장의 이미지 데이터셋을 직접 제작했습니다.
-https://app.roboflow.com/home-ogtae/smartfactory-7hesr/3
+초기 구축한 자체 데이터셋(SmartFactory-3, 425장)으로 학습한 모델을 실제 환경에서 테스트해본 결과, 조명과 카메라 각도 등의 차이(도메인 갭)로 인해 성능 저하가 발생했습니다.
+이를 해결하기 위해 현장의 실제 컨베이어 벨트 환경에서 추가 이미지(Normal 50장, Broken 51장, Stained 152장)를 직접 촬영하고, 데이터 증강(Rotation, Brightness, Blur)을 거친 새 데이터셋(SmartFactory-5)으로 추가 파인튜닝을 진행했습니다.
+
 
 ### 학습 설정
 
-| 항목        | 값                                             |
-| ----------- | ---------------------------------------------- |
-| 베이스 모델 | YOLOv8n (Nano)                                 |
-| 데이터셋    | SmartFactory-3 (Roboflow)                      |
-| Epochs      | 80 (Early Stopping patience=20)                |
-| 이미지 크기 | 640×640                                        |
-| 디바이스    | Apple M3 Pro 32GB (MPS) / CUDA / CPU 자동 선택 |
-| 데이터 증강 | HSV 조정, 좌우 반전(fliplr=0.5)                |
+| 항목 | 설정값 |
+| --- | --- |
+| 베이스 모델 | 기존에 학습된 `best.pt` (YOLOv8n 기반) |
+| 데이터셋 | 추가 촬영 및 증강한 자체 데이터셋 (SmartFactory-5) |
+| 분할 비율 | Train 60% / Val 20% / Test 20% |
+| 학습 옵션 | 40 Epochs, lr0=0.001 (Early Stopping patience=10) |
+| 데이터 증강 | Rotation(±15°), Brightness(±15%), Blur(1.5px) |
+| 하드웨어 | Apple M3 Pro 32GB (MPS) |
 
-### 학습 결과
+### 평가 결과
 
-| 지표      | 값        |
-| --------- | --------- |
-| mAP@50    | **0.962** |
-| mAP@50-95 | 0.748     |
-| Precision | 0.953     |
-| Recall    | 0.924     |
+18 Epoch에서 수렴하며 과적합 없이 안정적인 성능을 확보했습니다.
+
+| 클래스 | Precision | Recall | mAP@50 | mAP@50-95 |
+| --- | --- | --- | --- | --- |
+| **전체** | 0.964 | 0.891 | **0.931** | **0.920** |
+| Broken | 0.949 | 0.922 | 0.920 | 0.915 |
+| Normal | 0.955 | 0.750 | 0.878 | 0.860 |
+| Stained | 0.990 | 1.000 | 0.995 | 0.985 |
 
 ```bash
 cd edge_node
 python train_custom.py
-# 학습 완료 후 가중치: runs/detect/factory_project/custom_inspector/weights/best.pt
+# 학습 완료 후 가중치: runs/detect/factory_project/custom_inspector_v2/weights/best.pt
 ```
 
 ---

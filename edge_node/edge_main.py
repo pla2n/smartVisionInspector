@@ -30,7 +30,7 @@ latest_frame = None
 frame_buffer = collections.deque(maxlen=90)
 
 YOLO_MODEL_PATH = os.getenv("YOLO_MODEL_PATH", "yolov8n.pt")
-defect_classes_raw = os.getenv("DEFECT_CLASSES", "pizza,toilet,chair,person,bed")
+defect_classes_raw = os.getenv("DEFECT_CLASSES", "Broken,Stained")
 DEFECT_CLASSES = [c.strip() for c in defect_classes_raw.split(",") if c.strip()]
 
 print(f"YOLO모델({YOLO_MODEL_PATH}) 로딩중...")
