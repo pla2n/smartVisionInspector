@@ -117,10 +117,7 @@ def run_dashboard():
         st.error(f"백엔드 API 서버 응답이 없습니다. 에러 : {e}")
         return
 
-    if st.session_state['show_chat']:
-        col_main, col_chat = st.columns([3, 1.2])
-    else:
-        col_main, col_chat = st.columns([1, 0.001])
+    col_main = st.container()
 
     with col_main:
         head1, head2 = st.columns([4, 1])
@@ -209,9 +206,8 @@ def run_dashboard():
             st.info("수집된 로그 데이터가 없습니다.")
     
     if st.session_state['show_chat']:
-        with col_chat:
-            st.markdown("<div class='chat-panel'>", unsafe_allow_html=True)
-            st.subheader("AI 분석 어이스턴트")
+        with st.sidebar:
+            st.subheader("🤖 AI 분석 어시스턴트")
 
             if st.button("AI 분석 보고서 생성", use_container_width=True, type="primary"):
                 
@@ -237,8 +233,6 @@ def run_dashboard():
 
                 st.session_state['chat_history'].append({"role": "assistant", "content": ai_response['messages'][-1].content})
                 st.rerun()
-
-            st.markdown("</div>", unsafe_allow_html=True)
 
 if not st.session_state['logged_in']:
     login()
