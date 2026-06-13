@@ -66,7 +66,7 @@ def get_factory_logs(limit: int = 500):
     """실시간 공정 로그 데이터 API"""
     conn = get_db_connection()
     try:
-        query = f"SELECT timestamp, status, sensor_data FROM logs ORDER BY timestamp ASC LIMIT ?"
+        query = "SELECT * FROM (SELECT timestamp, status, sensor_data FROM logs ORDER BY timestamp DESC LIMIT ?) ORDER BY timestamp ASC"
         df = pd.read_sql_query(query, conn, params=(limit,))
         return df.to_dict(orient="records")
     finally:
